@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: jwt-security
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: jwt-auth-token
