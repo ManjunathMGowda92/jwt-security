@@ -1,26 +1,24 @@
 package org.fourstack.jwt_security.security.filter;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.fourstack.jwt_security.constant.AppConstant;
 import org.fourstack.jwt_security.security.service.JwtTokenService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
@@ -28,11 +26,19 @@ import java.io.IOException;
  * Filter to validate the JWT token from Authorization Header.
  */
 @Component
-@RequiredArgsConstructor
 public class JwtValidationFilter extends OncePerRequestFilter {
   private final Environment env;
   private final JwtTokenService jwtService;
   private final UserDetailsService userDetailsService;
+  private final HandlerExceptionResolver exceptionResolver;
+
+  public JwtValidationFilter(Environment env, JwtTokenService jwtService, UserDetailsService userDetailsService,
+                             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
+    this.env = env;
+    this.jwtService = jwtService;
+    this.userDetailsService = userDetailsService;
+    this.exceptionResolver = exceptionResolver;
+  }
 
   /**
    * Method to verify the JWT token from the Authorization header using the secret key.
@@ -65,12 +71,8 @@ public class JwtValidationFilter extends OncePerRequestFilter {
         String username = jwtService.getUsername(claims);
         Authentication authenticationToken = validateUserAndCreateToken(username);
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-      } catch (ExpiredJwtException e) {
-        throw new BadCredentialsException("Token Expired!");
-      } catch (UsernameNotFoundException e) {
-        throw new BadCredentialsException(e.getMessage());
       } catch (Exception e) {
-        throw new BadCredentialsException("Invalid Credentials!!");
+        exceptionResolver.resolveException(request, response, null, e);
       }
     }
     filterChain.doFilter(request, response);

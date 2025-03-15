@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.fourstack.jwt_security.constant.AppConstant;
 import org.fourstack.jwt_security.entity.AppUserDetails;
 import org.fourstack.jwt_security.enums.Role;
-import org.fourstack.jwt_security.exception.ErrorDetails;
+import org.fourstack.jwt_security.exception.InvalidCredentialsException;
 import org.fourstack.jwt_security.exception.UserAlreadyExistException;
 import org.fourstack.jwt_security.model.AuthenticationRequest;
 import org.fourstack.jwt_security.model.AuthenticationResponse;
@@ -13,7 +13,6 @@ import org.fourstack.jwt_security.repository.AppUserDetailsRepository;
 import org.fourstack.jwt_security.security.service.JwtTokenService;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -70,7 +69,6 @@ public class AdminUserService {
    * @return AuthenticationResponse object with JWT token and Error Details.
    */
   public AuthenticationResponse createAuthToken(AuthenticationRequest request) {
-    ErrorDetails errorDetails;
     if (isUserExist(request.getEmail())) {
       AppUserDetails user = retrieveUser(request.getEmail());
       if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -82,21 +80,10 @@ public class AdminUserService {
                 .creationTime(LocalDateTime.now())
                 .build();
       }
-      errorDetails = getErrorDetails("APP_002", "Invalid password");
+      throw new InvalidCredentialsException("Invalid password");
     } else {
-      errorDetails = getErrorDetails("APP_003", "No user details found for :" + request.getEmail());
+      throw new UsernameNotFoundException("No user details found for :" + request.getEmail());
     }
-    return AuthenticationResponse.builder()
-            .status(HttpStatus.BAD_REQUEST)
-            .errorDetails(errorDetails)
-            .build();
-  }
-
-  private ErrorDetails getErrorDetails(String errorCode, String errorMessage) {
-    return ErrorDetails.builder()
-            .errorCode(errorCode)
-            .errorMessage(errorMessage)
-            .build();
   }
 
   private AppUserDetails convertToUserDetails(UserRegistrationDetails details) {

@@ -43,6 +43,8 @@ public class UserController {
    */
   @PostMapping("/authenticate")
   public ResponseEntity<AuthenticationResponse> getAuthenticationDetails(@RequestBody AuthenticationRequest request) {
-    return ResponseEntity.ok(userService.createAuthToken(request));
+    AuthenticationResponse authToken = userService.createAuthToken(request);
+    return ResponseEntity.status(authToken.getStatus())
+            .body(authToken);
   }
 }
