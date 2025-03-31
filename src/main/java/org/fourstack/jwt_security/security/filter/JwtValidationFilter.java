@@ -89,4 +89,10 @@ public class JwtValidationFilter extends OncePerRequestFilter {
     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
     return new UsernamePasswordAuthenticationToken(username, null, userDetails.getAuthorities());
   }
+
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    // this will exclude the filter operation for below API path
+    return request.getServletPath().equals("/api/v1/user/authenticate");
+  }
 }

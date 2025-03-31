@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -98,6 +99,16 @@ public class AppExceptionHandler {
     ErrorDetails details = getErrorDetails("AUTHZ-FAILURE-002",
             "JWT Token Expired!", request, HttpStatus.FORBIDDEN);
     return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(details);
+  }
+
+  @ExceptionHandler(InsufficientAuthenticationException.class)
+  public ResponseEntity<ErrorDetails> handleException(InsufficientAuthenticationException exception,
+                                                      HttpServletRequest request) {
+    logger.error(EXCEPTION_HANDLING_MESSAGE, exception.getClass().getName(), exception.getMessage());
+    ErrorDetails details = getErrorDetails("AUTHN-FAILURE-004",
+            "SECURED-API: " + exception.getMessage(), request, HttpStatus.UNAUTHORIZED);
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .body(details);
   }
 
